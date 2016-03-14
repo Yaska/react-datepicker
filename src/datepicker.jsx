@@ -1,4 +1,5 @@
 import DateInput from './date_input'
+import moment from "moment"
 import Calendar from './calendar'
 import React from 'react'
 import TetherComponent from 'react-tether'
@@ -49,6 +50,7 @@ var DatePicker = React.createClass({
   getDefaultProps () {
     return {
       dateFormatCalendar: 'MMMM YYYY',
+      moment: moment,
       onChange () {},
       disabled: false,
       onFocus () {},
@@ -128,6 +130,7 @@ var DatePicker = React.createClass({
     return <Calendar
         ref="calendar"
         locale={this.props.locale}
+        moment= {this.props.moment}
         dateFormat={this.props.dateFormatCalendar}
         selected={this.props.selected}
         onSelect={this.handleSelect}

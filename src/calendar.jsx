@@ -1,8 +1,6 @@
-import moment from 'moment'
-import YearDropdown from './year_dropdown'
-import Month from './month'
-import React from 'react'
-import { isSameDay } from './date_utils'
+import YearDropdown from "./year_dropdown";
+import Month from "./month";
+import React from "react";
 
 var todayTr = {
   nl: "Vandaag",
@@ -26,56 +24,54 @@ function getDateInView({ moment, selected, minDate, maxDate }) {
 }
 
 var Calendar = React.createClass({
-  displayName: 'Calendar',
+  mixins: [require("react-onclickoutside")],
 
   propTypes: {
+    weekdays: React.PropTypes.array.isRequired,
+    locale: React.PropTypes.string.isRequired,
+    moment: React.PropTypes.func.isRequired,
     dateFormat: React.PropTypes.string.isRequired,
+    onSelect: React.PropTypes.func.isRequired,
+    handleClick: React.PropTypes.func.isRequired,
+    minDate: React.PropTypes.object,
+    maxDate: React.PropTypes.object,
+    startDate: React.PropTypes.object,
     endDate: React.PropTypes.object,
     excludeDates: React.PropTypes.array,
-    filterDate: React.PropTypes.func,
     includeDates: React.PropTypes.array,
-    locale: React.PropTypes.string,
-    maxDate: React.PropTypes.object,
-    minDate: React.PropTypes.object,
-    onClickOutside: React.PropTypes.func.isRequired,
-    onSelect: React.PropTypes.func.isRequired,
-    selected: React.PropTypes.object,
-    showYearDropdown: React.PropTypes.bool,
-    startDate: React.PropTypes.object,
-    todayButton: React.PropTypes.string
+    filterDate: React.PropTypes.func,
+    weekStart: React.PropTypes.string.isRequired,
+    showYearDropdown: React.PropTypes.bool
   },
 
-  mixins: [require('react-onclickoutside')],
+  handleClickOutside(event) {
+    this.props.handleClick(event);
+  },
 
-  getInitialState () {
+  getInitialState() {
     return {
-      date: this.localizeMoment(this.getDateInView())
-    }
+      date: getDateInView(this.props)
+    };
   },
 
-  componentWillReceiveProps (nextProps) {
-    if (nextProps.selected && !isSameDay(nextProps.selected, this.props.selected)) {
+  getDefaultProps() {
+    return {
+      weekStart: "1"
+    };
+  },
+
+  componentWillMount() {
+    this.initializeMomentLocale();
+  },
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.selected === null) { return; }
+
+    // When the selected date changed
+    if (nextProps.selected !== this.props.selected) {
       this.setState({
-        date: this.localizeMoment(nextProps.selected)
-      })
-    }
-  },
-
-  handleClickOutside (event) {
-    this.props.onClickOutside(event)
-  },
-
-  getDateInView () {
-    const { selected, minDate, maxDate } = this.props
-    const current = moment()
-    if (selected) {
-      return selected
-    } else if (minDate && minDate.isAfter(current)) {
-      return minDate
-    } else if (maxDate && maxDate.isBefore(current)) {
-      return maxDate
-    } else {
-      return current
+        date: nextProps.selected
+      });
     }
   },
 
@@ -87,35 +83,33 @@ var Calendar = React.createClass({
     })
   },
 
-  localizeMoment (date) {
-    return date.clone().locale(this.props.locale || moment.locale())
-  },
-
-  increaseMonth () {
+  increaseMonth() {
     this.setState({
-      date: this.state.date.clone().add(1, 'month')
-    })
+      date: this.state.date.clone().add(1, "month")
+    });
   },
 
-  decreaseMonth () {
+  decreaseMonth() {
     this.setState({
-      date: this.state.date.clone().subtract(1, 'month')
-    })
+      date: this.state.date.clone().subtract(1, "month")
+    });
   },
 
-  handleDayClick (day) {
-    this.props.onSelect(day)
+  handleDayClick(day) {
+    this.props.onSelect(day);
   },
 
-  changeYear (year) {
+  changeYear(year) {
     this.setState({
-      date: this.state.date.clone().set('year', year)
-    })
+      date: this.state.date.clone().set("year", year)
+    });
   },
 
   header() {
     //SMALL HACK, something is wrong with setting week properties in moment.locale
-    const startOfWeek = this.state.date.clone().startOf('week')
+    console.log("this.props.moment",this.props.moment.locale(),this.props.moment())
+    console.log("this.props.moment().startOf('week')",this.props.moment().startOf('week'));
+    const startOfWeek = this.props.moment().startOf('week')
     return [0, 1, 2, 3, 4, 5, 6].map(offset => {
       const day = startOfWeek.clone().add(offset, 'days')
       return (
@@ -124,45 +118,48 @@ var Calendar = React.createClass({
         </div>
       )
     })
+
   },
 
-  renderCurrentMonth () {
-    var classes = ['datepicker__current-month']
+  renderCurrentMonth() {
+    var classes = ["datepicker__current-month"];
     if (this.props.showYearDropdown) {
-      classes.push('datepicker__current-month--hasYearDropdown')
+      classes.push("datepicker__current-month--hasYearDropdown");
     }
     return (
-      <div className={classes.join(' ')}>
+      <div className={classes.join(" ")}>
         {this.state.date.format(this.props.dateFormat)}
       </div>
-    )
+    );
   },
 
-  renderYearDropdown () {
+  renderYearDropdown() {
     if (!this.props.showYearDropdown) {
-      return
+      return;
     }
     return (
       <YearDropdown
-          onChange={this.changeYear}
-          year={this.state.date.year()} />
-    )
+        onChange={this.changeYear}
+        year={this.state.date.year()} />
+    );
   },
 
-  renderTodayButton () {
-    if (!this.props.todayButton) {
+  renderTodayButton() {
+    const {moment, onSelect, locale, todayButton} = this.props
+    if (!todayButton) {
       return
     }
+
     return (
-      <div className="datepicker__today-button" onClick={() => this.props.onSelect(moment())}>
-        {this.props.todayButton}
+      <div className="datepicker__today-button" onClick={() => onSelect(moment())}>
+        {todayTr[locale]}
       </div>
     )
   },
-  render () {
 
+  render() {
     return (
-      <div className="datepicker">
+      <div className="datepicker" onClick={this.props.handleClick}>
         <div className="datepicker__triangle"></div>
         <div className="datepicker__header">
           <a className="datepicker__navigation datepicker__navigation--previous"
@@ -178,20 +175,22 @@ var Calendar = React.createClass({
           </div>
         </div>
         <Month
-            day={this.state.date}
-            onDayClick={this.handleDayClick}
-            minDate={this.props.minDate}
-            maxDate={this.props.maxDate}
-            excludeDates={this.props.excludeDates}
-            includeDates={this.props.includeDates}
-            filterDate={this.props.filterDate}
-            selected={this.props.selected}
-            startDate={this.props.startDate}
-            endDate={this.props.endDate} />
-        {this.renderTodayButton()}
+          day={this.state.date}
+          onDayClick={this.handleDayClick}
+          minDate={this.props.minDate}
+          maxDate={this.props.maxDate}
+          excludeDates={this.props.excludeDates}
+          includeDates={this.props.includeDates}
+          filterDate={this.props.filterDate}
+          selected={this.props.selected}
+          startDate={this.props.startDate}
+          endDate={this.props.endDate} />
+        <div>
+          {this.renderTodayButton()}
+        </div>
       </div>
-    )
+    );
   }
-})
+});
 
-module.exports = Calendar
+module.exports = Calendar;

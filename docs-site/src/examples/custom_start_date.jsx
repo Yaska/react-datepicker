@@ -25,6 +25,7 @@ export default React.createClass({
               {"selected={this.state.startDate}"}<br />
               {"onChange={this.handleChange}"}<br />
           <strong>    {"weekStart='0'"}</strong><br />
+          <strong>    {"locale='en-us'"}</strong><br />
               {"placeholderText='I start on Sunday!' />"}
         </code>
       </pre>
@@ -32,6 +33,7 @@ export default React.createClass({
         <DatePicker
           selected={this.state.startDate}
           onChange={this.handleChange}
+          locale="en-us"
           weekStart="0"
           placeholderText="I start on Sunday!" />
       </div>
