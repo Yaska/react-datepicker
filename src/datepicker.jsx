@@ -1,221 +1,203 @@
-import isEqual from "lodash/lang/isEqual";
-import moment from "moment";
-import DateInput from "./date_input";
-import Calendar from "./calendar";
-import Popover from "./popover";
-import React from "react";
-import ReactDOM from "react-dom";
+import DateInput from './date_input'
+import Calendar from './calendar'
+import React from 'react'
+import TetherComponent from 'react-tether'
+import classnames from 'classnames'
+import { isSameDay } from './date_utils'
+
+/**
+ * General datepicker component.
+ */
 
 var DatePicker = React.createClass({
+  displayName: 'DatePicker',
 
   propTypes: {
-    weekdays: React.PropTypes.arrayOf(React.PropTypes.string),
-    locale: React.PropTypes.string,
+    className: React.PropTypes.string,
+    dateFormat: React.PropTypes.string,
     dateFormatCalendar: React.PropTypes.string,
     disabled: React.PropTypes.bool,
+    endDate: React.PropTypes.object,
+    excludeDates: React.PropTypes.array,
+    filterDate: React.PropTypes.func,
     id: React.PropTypes.string,
+    includeDates: React.PropTypes.array,
+    isClearable: React.PropTypes.bool,
+    locale: React.PropTypes.string,
+    maxDate: React.PropTypes.object,
+    minDate: React.PropTypes.object,
+    name: React.PropTypes.string,
+    onBlur: React.PropTypes.func,
+    onChange: React.PropTypes.func.isRequired,
+    onFocus: React.PropTypes.func,
+    placeholderText: React.PropTypes.string,
     popoverAttachment: React.PropTypes.string,
     popoverTargetAttachment: React.PropTypes.string,
     popoverTargetOffset: React.PropTypes.string,
-    weekStart: React.PropTypes.string,
+    readOnly: React.PropTypes.bool,
+    renderCalendarTo: React.PropTypes.any,
+    required: React.PropTypes.bool,
+    selected: React.PropTypes.object,
     showYearDropdown: React.PropTypes.bool,
-    onChange: React.PropTypes.func.isRequired,
-    onBlur: React.PropTypes.func,
-    onFocus: React.PropTypes.func,
-    onClear: React.PropTypes.func,
+    startDate: React.PropTypes.object,
     tabIndex: React.PropTypes.number,
-    isTypeable: React.PropTypes.bool,
-    filterDate: React.PropTypes.func
+    tetherConstraints: React.PropTypes.array,
+    title: React.PropTypes.string,
+    todayButton: React.PropTypes.string
   },
 
-  getDefaultProps() {
+  getDefaultProps () {
     return {
-      weekdays: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-      locale: "en",
-      dateFormatCalendar: "MMMM YYYY",
-      moment: moment,
-      onChange() {},
+      dateFormatCalendar: 'MMMM YYYY',
+      onChange () {},
       disabled: false,
-      onFocus() {},
-      onBlur() {},
-      onClear() {},
-      isTypeable: false
-    };
-  },
-
-  getInitialState() {
-    return {
-      focus: false,
-      selected: this.props.selected
-    };
-  },
-
-  componentWillReceiveProps(nextProps) {
-    this.setState({
-      selected: nextProps.selected
-    });
-  },
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return !(isEqual(nextProps, this.props) && isEqual(nextState, this.state));
-  },
-
-  getValue() {
-    return this.state.selected;
-  },
-
-  handleFocus() {
-    if(this.state.focus) { return }
-    this.props.onFocus();
-    setTimeout(() => {
-      this.setState({ focus: true });
-    }, 200);
-  },
-
-  handleBlur() {
-    if(!this.state.focus) { return }
-    setTimeout(() => {
-      if (!this.state.datePickerHasFocus) {
-        this.props.onBlur(this.state.selected);
-        this.hideCalendar();
-      }
-    }, 200);
-  },
-
-  hideCalendar() {
-    setTimeout(() => {
-      this.setState({
-        focus: false
-      });
-    }, 0);
-  },
-
-  doesDatePickerContainElement(element) {
-    var datePicker = ReactDOM.findDOMNode(this.refs.calendar);
-    if (!datePicker) {
-      return false;
+      onFocus () {},
+      onBlur () {},
+      popoverAttachment: 'top left',
+      popoverTargetAttachment: 'bottom left',
+      popoverTargetOffset: '10px 0',
+      tetherConstraints: [
+        {
+          to: 'window',
+          attachment: 'together'
+        }
+      ]
     }
-    return datePicker.contains(element);
   },
 
-  handleSelect(date) {
-    this.setSelected(date);
-
-    setTimeout(() => {
-      this.hideCalendar();
-    }, 200);
+  getInitialState () {
+    return {
+      open: false
+    }
   },
 
-  setSelected(date) {
-    this.setState({
-      selected: date
-    }, () => {
-      this.props.onChange(this.state.selected);
-    });
+  setOpen (open) {
+    this.setState({ open })
   },
 
-  invalidateSelected() {
-    if (this.state.selected === null) return;
-    this.props.onChange(null);
+  handleFocus (event) {
+    this.props.onFocus(event)
+    this.setOpen(true)
   },
 
-  onInputClick(event) {
-    var previousFocusState = this.state.focus;
-
-    this.setState({
-      focus: (event.target === ReactDOM.findDOMNode(this.refs.input) ? !this.state.focus : true),
-      datePickerHasFocus: this.doesDatePickerContainElement(event.target)
-    }, () => {
-      this.forceUpdate();
-      if (previousFocusState && !this.state.datePickerHasFocus) {
-        this.hideCalendar();
-      }
-    });
+  handleBlur (event) {
+    if (this.state.open) {
+      this.refs.input.focus()
+    } else {
+      this.props.onBlur(event)
+    }
   },
 
-  onClearClick(event) {
-    event.preventDefault();
-
-    // Due to issues with IE onchange events sometimes this gets noisy, so skip if we've already cleared
-    if (this.state.selected === null) return;
-
-    this.setState({
-      selected: null
-    }, () => {
-      this.props.onClear();
-      this.props.onChange(null);
-    });
+  handleCalendarClickOutside (event) {
+    this.setOpen(false)
   },
 
-  calendar() {
-    if (this.state.focus) {
-      return (
-        <Popover
+  handleSelect (date) {
+    this.setSelected(date)
+    this.setOpen(false)
+  },
+
+  setSelected (date) {
+    if (!isSameDay(this.props.selected, date)) {
+      this.props.onChange(date)
+    }
+  },
+
+  onInputClick () {
+    this.setOpen(true)
+  },
+
+  onInputKeyDown (event) {
+    if (event.key === 'Enter' || event.key === 'Escape') {
+      event.preventDefault()
+      this.setOpen(false)
+    } else if (event.key === 'Tab') {
+      this.setOpen(false)
+    }
+  },
+
+  onClearClick (event) {
+    event.preventDefault()
+    this.props.onChange(null)
+  },
+
+  renderCalendar () {
+    if (!this.state.open || this.props.disabled) {
+      return null
+    }
+    return <Calendar
+        ref="calendar"
+        locale={this.props.locale}
+        dateFormat={this.props.dateFormatCalendar}
+        selected={this.props.selected}
+        onSelect={this.handleSelect}
+        minDate={this.props.minDate}
+        maxDate={this.props.maxDate}
+        startDate={this.props.startDate}
+        endDate={this.props.endDate}
+        excludeDates={this.props.excludeDates}
+        filterDate={this.props.filterDate}
+        onClickOutside={this.handleCalendarClickOutside}
+        includeDates={this.props.includeDates}
+        showYearDropdown={this.props.showYearDropdown}
+        todayButton={this.props.todayButton} />
+  },
+
+  renderDateInput () {
+    var className = classnames(this.props.className, {
+      'ignore-react-onclickoutside': this.state.open
+    })
+    return <DateInput
+        ref='input'
+        id={this.props.id}
+        name={this.props.name}
+        date={this.props.selected}
+        locale={this.props.locale}
+        minDate={this.props.minDate}
+        maxDate={this.props.maxDate}
+        excludeDates={this.props.excludeDates}
+        includeDates={this.props.includeDates}
+        filterDate={this.props.filterDate}
+        dateFormat={this.props.dateFormat}
+        onFocus={this.handleFocus}
+        onBlur={this.handleBlur}
+        onClick={this.onInputClick}
+        onKeyDown={this.onInputKeyDown}
+        onChangeDate={this.setSelected}
+        placeholder={this.props.placeholderText}
+        disabled={this.props.disabled}
+        className={className}
+        title={this.props.title}
+        readOnly={this.props.readOnly}
+        required={this.props.required}
+        tabIndex={this.props.tabIndex} />
+  },
+
+  renderClearButton () {
+    if (this.props.isClearable && this.props.selected != null) {
+      return <a className="close-icon" href="#" onClick={this.onClearClick}></a>
+    } else {
+      return null
+    }
+  },
+
+  render () {
+    return (
+      <TetherComponent
+          classPrefix={"datepicker__tether"}
           attachment={this.props.popoverAttachment}
           targetAttachment={this.props.popoverTargetAttachment}
           targetOffset={this.props.popoverTargetOffset}
+          renderElementTo={this.props.renderCalendarTo}
           constraints={this.props.tetherConstraints}>
-
-          <Calendar
-            ref="calendar"
-            weekdays={this.props.weekdays}
-            locale={this.props.locale}
-            moment={this.props.moment}
-            dateFormat={this.props.dateFormatCalendar}
-            selected={this.state.selected}
-            onSelect={this.handleSelect}
-            hideCalendar={this.hideCalendar}
-            minDate={this.props.minDate}
-            maxDate={this.props.maxDate}
-            startDate={this.props.startDate}
-            endDate={this.props.endDate}
-            excludeDates={this.props.excludeDates}
-            filterDate={this.props.filterDate}
-            handleClick={this.onInputClick}
-            includeDates={this.props.includeDates}
-            weekStart={this.props.weekStart}
-            showYearDropdown={this.props.showYearDropdown} />
-        </Popover>
-      );
-    }
-  },
-
-  render() {
-    var clearButton = null;
-    if (this.props.isClearable && this.state.selected != null) {
-      clearButton = (
-        <a className="close-icon" href="#" onClick={this.onClearClick}></a>
-      );
-    }
-
-    return (
-      <div className="datepicker__input-container">
-        <DateInput
-          ref="input"
-          id={this.props.id}
-          name={this.props.name}
-          date={this.state.selected}
-          dateFormat={this.props.dateFormat}
-          focus={this.state.focus}
-          onFocus={this.handleFocus}
-          onBlur={this.handleBlur}
-          handleClick={this.onInputClick}
-          handleEnter={this.hideCalendar}
-          setSelected={this.setSelected}
-          invalidateSelected={this.invalidateSelected}
-          placeholderText={this.props.placeholderText}
-          disabled={this.props.disabled}
-          className={this.props.className}
-          title={this.props.title}
-          readOnly={this.props.readOnly}
-          required={this.props.required}
-          tabIndex={this.props.tabIndex}
-          isTypeable={this.props.isTypeable} />
-        {clearButton}
-        {this.props.disabled ? null : this.calendar()}
-      </div>
-    );
+        <div className="datepicker__input-container">
+          {this.renderDateInput()}
+          {this.renderClearButton()}
+        </div>
+        {this.renderCalendar()}
+      </TetherComponent>
+    )
   }
-});
+})
 
-module.exports = DatePicker;
+module.exports = DatePicker

@@ -1,114 +1,101 @@
-import moment from "moment";
-import ReactDOM from "react-dom";
-import React from "react";
+import moment from 'moment'
+import React from 'react'
+import classnames from 'classnames'
+import { isSameDay, isDayDisabled } from './date_utils'
+
 var DateInput = React.createClass({
+  displayName: 'DateInput',
 
-  getDefaultProps() {
+  propTypes: {
+    className: React.PropTypes.string,
+    date: React.PropTypes.object,
+    dateFormat: React.PropTypes.string,
+    disabled: React.PropTypes.bool,
+    excludeDates: React.PropTypes.array,
+    filterDate: React.PropTypes.func,
+    includeDates: React.PropTypes.array,
+    locale: React.PropTypes.string,
+    maxDate: React.PropTypes.object,
+    minDate: React.PropTypes.object,
+    onBlur: React.PropTypes.func,
+    onChange: React.PropTypes.func,
+    onChangeDate: React.PropTypes.func
+  },
+
+  getDefaultProps () {
     return {
-      dateFormat: "YYYY-MM-DD",
-      className: "datepicker__input",
-      onBlur() {}
-    };
+      dateFormat: 'L'
+    }
   },
 
-  componentWillMount() {
+  getInitialState () {
+    return {
+      maybeDate: this.safeDateFormat(this.props)
+    }
+  },
+
+  componentWillReceiveProps (newProps) {
+    if (!isSameDay(newProps.date, this.props.date) ||
+          newProps.locale !== this.props.locale ||
+          newProps.dateFormat !== this.props.dateFormat) {
+      this.setState({
+        maybeDate: this.safeDateFormat(newProps)
+      })
+    }
+  },
+
+  handleChange (event) {
+    if (this.props.onChange) {
+      this.props.onChange(event)
+    }
+    if (!event.isDefaultPrevented()) {
+      this.handleChangeDate(event.target.value)
+    }
+  },
+
+  handleChangeDate (value) {
+    if (this.props.onChangeDate) {
+      var date = moment(value, this.props.dateFormat, this.props.locale || moment.locale(), true)
+      if (date.isValid() && !isDayDisabled(date, this.props)) {
+        this.props.onChangeDate(date)
+      } else if (value === '') {
+        this.props.onChangeDate(null)
+      }
+    }
     this.setState({
-        maybeDate: this.safeDateFormat(this.props.date)
-    });
+      maybeDate: value
+    })
   },
 
-  componentDidMount() {
-    this.toggleFocus(this.props.focus);
+  safeDateFormat (props) {
+    return props.date && props.date.clone()
+      .locale(props.locale || moment.locale())
+      .format(props.dateFormat)
   },
 
-  componentWillReceiveProps(newProps) {
-    this.toggleFocus(newProps.focus);
-
-    // It checks that user is typing some date and
-    // we should skipp updating because it would clear date input.
-    // In particular, it checks that we pass the typeable flag in datepicker props
-    // and that input has focus
-    // and that new date is null (when input date is invalid the "this.props.invalidateSelected()"
-    // method sets state as null).
-    // The main disadvantage of this approach is that it is imposible to clear date
-    // while the input has focus.
-    var doesUserType = newProps.isTypeable && newProps.focus && !newProps.date;
-
-    // If we're receiving a different date then apply it.
-    // If we're receiving a null date continue displaying the
-    // value currently in the textbox.
-    if (newProps.date != this.props.date && !doesUserType) {
-        this.setState({
-            maybeDate: this.safeDateFormat(newProps.date)
-        });
-    }
-  },
-
-  toggleFocus(focus) {
-    if (focus) {
-      this.refs.input.focus();
-    } else {
-      this.refs.input.blur();
-    }
-  },
-
-  handleChange(event) {
-    var value = event.target.value;
-    var date = moment(value, this.props.dateFormat, true);
-
-    if (date.isValid()) {
-        this.props.setSelected(date);
-    } else {
-        this.props.invalidateSelected();
-    }
-
+  handleBlur (event) {
     this.setState({
-        maybeDate: value
-    });
-  },
-
-  safeDateFormat(date) {
-    return !!date ? date.format(this.props.dateFormat) : null;
-  },
-
-  handleKeyDown(event) {
-    switch (event.key) {
-    case "Enter":
-      event.preventDefault();
-      this.props.handleEnter();
-      break;
-    case "Escape":
-      event.preventDefault();
-      this.props.hideCalendar();
-      break;
+      maybeDate: this.safeDateFormat(this.props)
+    })
+    if (this.props.onBlur) {
+      this.props.onBlur(event)
     }
   },
 
-  handleClick(event) {
-    if (!this.props.disabled) {
-      this.props.handleClick(event);
-    }
+  focus () {
+    this.refs.input.focus()
   },
 
-  render() {
+  render () {
     return <input
-        ref="input"
-        type="text"
-        id={this.props.id}
-        name={this.props.name}
+        ref='input'
+        type='text'
+        {...this.props}
         value={this.state.maybeDate}
-        onClick={this.handleClick}
-        onKeyDown={this.handleKeyDown}
-        onFocus={this.props.onFocus}
-        onBlur={this.props.onBlur}
+        onBlur={this.handleBlur}
         onChange={this.handleChange}
-        className={"ignore-react-onclickoutside " + this.props.className}
-        disabled={this.props.disabled}
-        placeholder={this.props.placeholderText}
-        readOnly={this.props.readOnly}
-        required={this.props.required}
-        tabIndex={this.props.tabIndex} />;
+        className={classnames('datepicker__input', this.props.className)} />
   }
-});
+})
 
-module.exports = DateInput;
+module.exports = DateInput

@@ -1,77 +1,156 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import TestUtils from "react-addons-test-utils";
-import DatePicker from "../src/datepicker.jsx";
-import moment from "moment";
+import React from 'react'
+import ReactDOM from 'react-dom'
+import TestUtils from 'react-addons-test-utils'
+import DatePicker from '../src/datepicker.jsx'
+import Day from '../src/day'
+import moment from 'moment'
 
-describe("DatePicker", () => {
-  it("should show the calendar when focusing on the date input", done => {
+describe('DatePicker', () => {
+  it('should show the calendar when focusing on the date input', () => {
     var datePicker = TestUtils.renderIntoDocument(
       <DatePicker />
-    );
-    var dateInput = datePicker.refs.input;
-    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput));
-    setTimeout(() => {
-      expect(datePicker.refs.calendar).to.exist;
-      done();
-    }, 200);
-  });
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    expect(datePicker.refs.calendar).to.exist
+  })
 
-  it("should hide the calendar when blurring the date input", done => {
+  it('should show the calendar when clicking on the date input', () => {
     var datePicker = TestUtils.renderIntoDocument(
       <DatePicker />
-    );
-    var dateInput = datePicker.refs.input;
-    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput));
-    TestUtils.Simulate.blur(ReactDOM.findDOMNode(dateInput));
-    setTimeout(() => {
-      expect(datePicker.refs.calendar).to.not.exist;
-      done();
-    }, 300);
-  });
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.click(ReactDOM.findDOMNode(dateInput))
+    expect(datePicker.refs.calendar).to.exist
+  })
 
-  it("should allow clearing the date when isClearable is true", () => {
+  it('should render the calendar into a specified node', () => {
+    var node = document.createElement('div')
+    document.body.appendChild(node)
     var datePicker = TestUtils.renderIntoDocument(
-      <DatePicker isClearable={true} selected={moment("2015-12-15")} />
-    );
-    var clearButton = TestUtils.findRenderedDOMComponentWithClass(datePicker, "close-icon");
-    TestUtils.Simulate.click(clearButton);
-    var dateInput = datePicker.refs.input;
-    expect(ReactDOM.findDOMNode(dateInput).value).to.equal("");
-  });
+        <DatePicker renderCalendarTo={node} />
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.click(ReactDOM.findDOMNode(dateInput))
+    expect(datePicker.refs.calendar).to.exist
+    var calendarNode = ReactDOM.findDOMNode(datePicker.refs.calendar)
+    expect(node.contains(calendarNode)).to.be.true
+    document.body.removeChild(node)
+  })
 
-  it("should allow clearing the date when isClearable is true and isTypeable is true", () => {
-    var datePicker = TestUtils.renderIntoDocument(
-      <DatePicker isClearable={true} selected={moment("2015-12-15")} isTypeable={true} />
-    );
-    var clearButton = TestUtils.findRenderedDOMComponentWithClass(datePicker, "close-icon");
-    TestUtils.Simulate.click(clearButton);
-    var dateInput = datePicker.refs.input;
-    expect(ReactDOM.findDOMNode(dateInput).value).to.equal("");
-  });
-
-  it("should not hide the calendar if multiple clicks are made in a short interval", done => {
+  it('should keep the calendar shown when blurring the date input', () => {
     var datePicker = TestUtils.renderIntoDocument(
       <DatePicker />
-    );
-    var dateInput = datePicker.refs.input;
-    TestUtils.Simulate.click(ReactDOM.findDOMNode(dateInput));
+    )
+    var dateInput = datePicker.refs.input
+    var focusSpy = sinon.spy(dateInput, 'focus')
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    TestUtils.Simulate.blur(ReactDOM.findDOMNode(dateInput))
+    expect(datePicker.refs.calendar).to.exist
+    assert(focusSpy.calledOnce, 'should refocus the date input')
+  })
 
-    setTimeout(() => {
-      var calendar = datePicker.refs.calendar;
-      TestUtils.Simulate.blur(ReactDOM.findDOMNode(dateInput));
+  it('should keep the calendar shown when clicking the calendar', () => {
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker />
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    TestUtils.Simulate.click(ReactDOM.findDOMNode(datePicker.refs.calendar))
+    expect(datePicker.refs.calendar).to.exist
+  })
 
-      setTimeout(() => {
-        TestUtils.Simulate.click(ReactDOM.findDOMNode(calendar));
-        TestUtils.Simulate.click(ReactDOM.findDOMNode(calendar));
-      }, 0);
+  it('should hide the calendar when clicking a day on the calendar', () => {
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker />
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    var day = TestUtils.scryRenderedComponentsWithType(datePicker.refs.calendar, Day)[0]
+    TestUtils.Simulate.click(ReactDOM.findDOMNode(day))
+    expect(datePicker.refs.calendar).to.not.exist
+  })
 
-      TestUtils.Simulate.blur(ReactDOM.findDOMNode(dateInput));
-    }, 0);
+  it('should hide the calendar when the pressing enter in the date input', () => {
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker />
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    TestUtils.Simulate.keyDown(ReactDOM.findDOMNode(dateInput), { key: 'Enter' })
+    expect(datePicker.refs.calendar).to.not.exist
+  })
 
-    setTimeout(() => {
-      expect(datePicker.refs.calendar).to.exist;
-      done();
-    }, 300);
-  });
-});
+  it('should hide the calendar when the pressing escape in the date input', () => {
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker />
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    TestUtils.Simulate.keyDown(ReactDOM.findDOMNode(dateInput), { key: 'Escape' })
+    expect(datePicker.refs.calendar).to.not.exist
+  })
+
+  it('should hide the calendar when tabbing from the date input', () => {
+    var onBlurSpy = sinon.spy()
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker onBlur={onBlurSpy} />
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    TestUtils.Simulate.keyDown(ReactDOM.findDOMNode(dateInput), { key: 'Tab' })
+    TestUtils.Simulate.blur(ReactDOM.findDOMNode(dateInput))
+    expect(datePicker.refs.calendar).to.not.exist
+    assert(onBlurSpy.calledOnce, 'should call onBlur')
+  })
+
+  it('should not apply the ignore-react-onclickoutside class to the date input when closed', () => {
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker />
+    )
+    var dateInput = datePicker.refs.input
+    expect(ReactDOM.findDOMNode(dateInput).className).to.not.contain('ignore-react-onclickoutside')
+  })
+
+  it('should apply the ignore-react-onclickoutside class to date input when open', () => {
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker />
+    )
+    var dateInput = datePicker.refs.input
+    TestUtils.Simulate.focus(ReactDOM.findDOMNode(dateInput))
+    expect(ReactDOM.findDOMNode(dateInput).className).to.contain('ignore-react-onclickoutside')
+  })
+
+  it('should allow clearing the date when isClearable is true', () => {
+    var cleared = false
+    function handleChange (d) {
+      if (d === null) {
+        cleared = true
+      }
+    }
+    var datePicker = TestUtils.renderIntoDocument(
+      <DatePicker
+          selected={moment('2015-12-15')}
+          isClearable
+          onChange={handleChange} />
+    )
+    var clearButton = TestUtils.findRenderedDOMComponentWithClass(datePicker, 'close-icon')
+    TestUtils.Simulate.click(clearButton)
+    expect(cleared).to.be.true
+  })
+
+  it('should mount and unmount properly', done => {
+    var TestComponent = React.createClass({
+      displayName: 'TestComponent',
+
+      getInitialState () {
+        return { mounted: true }
+      },
+      render () {
+        return this.state.mounted ? <DatePicker /> : null
+      }
+    })
+    var element = TestUtils.renderIntoDocument(<TestComponent />)
+    element.setState({ mounted: false }, done)
+  })
+})
