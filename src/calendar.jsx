@@ -106,9 +106,7 @@ var Calendar = React.createClass({
   },
 
   header() {
-    //SMALL HACK, something is wrong with setting week properties in moment.locale
-    console.log("this.props.moment",this.props.moment.locale(),this.props.moment())
-    console.log("this.props.moment().startOf('week')",this.props.moment().startOf('week'));
+    
     const startOfWeek = this.props.moment().startOf('week')
     return [0, 1, 2, 3, 4, 5, 6].map(offset => {
       const day = startOfWeek.clone().add(offset, 'days')
