@@ -1,76 +1,82 @@
-import moment from 'moment'
-import React from 'react'
-import classnames from 'classnames'
-import { isSameDay, isDayDisabled } from './date_utils'
+import moment from "moment";
+import React from "react";
+import classnames from "classnames";
+import some from "lodash/some";
 
 var Day = React.createClass({
-  displayName: 'Day',
+  displayName: "Day",
 
   propTypes: {
     day: React.PropTypes.object.isRequired,
-    endDate: React.PropTypes.object,
-    excludeDates: React.PropTypes.array,
-    filterDate: React.PropTypes.func,
-    includeDates: React.PropTypes.array,
-    maxDate: React.PropTypes.object,
-    minDate: React.PropTypes.object,
     month: React.PropTypes.number,
     onClick: React.PropTypes.func,
+    minDate: React.PropTypes.object,
+    maxDate: React.PropTypes.object,
+    excludeDates: React.PropTypes.array,
+    includeDates: React.PropTypes.array,
+    filterDate: React.PropTypes.func,
     selected: React.PropTypes.object,
-    startDate: React.PropTypes.object
+    startDate: React.PropTypes.object,
+    endDate: React.PropTypes.object
   },
 
-  handleClick (event) {
+  handleClick(event) {
     if (!this.isDisabled() && this.props.onClick) {
-      this.props.onClick(event)
+      this.props.onClick(event);
     }
   },
 
-  isSameDay (other) {
-    return isSameDay(this.props.day, other)
+  isSameDay(other) {
+    return other && this.props.day.isSame(other, "day");
   },
 
-  isDisabled () {
-    return isDayDisabled(this.props.day, this.props)
+  isDisabled() {
+    const { day, minDate, maxDate, excludeDates, includeDates, filterDate } = this.props;
+
+    return (minDate && day.isBefore(minDate, "day")) ||
+      (maxDate && day.isAfter(maxDate, "day")) ||
+      some(excludeDates, excludeDate => this.isSameDay(excludeDate)) ||
+      (includeDates && !some(includeDates, includeDate => this.isSameDay(includeDate))) ||
+      (filterDate && !filterDate(day.clone()));
   },
 
-  isInRange () {
-    const { day, startDate, endDate } = this.props
-    if (!startDate || !endDate) return false
+  isInRange() {
+    const { day, startDate, endDate } = this.props;
+    if (!startDate || !endDate) return false;
 
-    const before = startDate.clone().startOf('day').subtract(1, 'seconds')
-    const after = endDate.clone().startOf('day').add(1, 'seconds')
-    return day.clone().startOf('day').isBetween(before, after)
+    const before = startDate.clone().startOf("day").subtract(1, "seconds");
+    const after = endDate.clone().startOf("day").add(1, "seconds");
+    return day.clone().startOf("day").isBetween(before, after);
   },
 
-  isWeekend () {
-    const weekday = this.props.day.day()
-    return weekday === 0 || weekday === 6
+  isWeekend() {
+    const weekday = this.props.day.weekday();
+    return weekday === 5 || weekday === 6;
   },
 
-  isOutsideMonth () {
+  isOutsideMonth() {
     return this.props.month !== undefined &&
-      this.props.month !== this.props.day.month()
+      this.props.month !== this.props.day.month();
   },
 
-  getClassNames () {
-    return classnames('datepicker__day', {
-      'datepicker__day--disabled': this.isDisabled(),
-      'datepicker__day--selected': this.isSameDay(this.props.selected),
-      'datepicker__day--in-range': this.isInRange(),
-      'datepicker__day--today': this.isSameDay(moment()),
-      'datepicker__day--weekend': this.isWeekend(),
-      'datepicker__day--outside-month': this.isOutsideMonth()
-    })
+  getClassNames() {
+    return classnames("datepicker__day", {
+      "datepicker__day--disabled": this.isDisabled(),
+      "datepicker__day--selected": this.isSameDay(this.props.selected),
+      "datepicker__day--in-range": this.isInRange(),
+      "datepicker__day--today": this.isSameDay(moment()),
+      "datepicker__day--weekend": this.isWeekend(),
+      "datepicker__day--outside-month": this.isOutsideMonth()
+    });
   },
 
-  render () {
+  render() {
     return (
       <div className={this.getClassNames()} onClick={this.handleClick}>
         {this.props.day.date()}
       </div>
-    )
+    );
   }
-})
+});
 
-module.exports = Day
+module.exports = Day;

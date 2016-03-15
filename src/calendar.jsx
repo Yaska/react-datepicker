@@ -27,7 +27,6 @@ var Calendar = React.createClass({
   mixins: [require("react-onclickoutside")],
 
   propTypes: {
-    weekdays: React.PropTypes.array.isRequired,
     locale: React.PropTypes.string.isRequired,
     moment: React.PropTypes.func.isRequired,
     dateFormat: React.PropTypes.string.isRequired,

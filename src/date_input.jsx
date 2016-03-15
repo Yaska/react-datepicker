@@ -94,6 +94,7 @@ var DateInput = React.createClass({
         value={this.state.maybeDate}
         onBlur={this.handleBlur}
         onChange={this.handleChange}
+        placeholder={this.props.placeholderText}
         className={classnames('datepicker__input', this.props.className)} />
   }
 })

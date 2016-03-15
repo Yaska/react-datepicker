@@ -12,22 +12,29 @@
   position: relative;
 }
 
+.datepicker__container {
+  position: absolute;
+  display: inline-block;
+  z-index: 2147483647;
+}
+
 .datepicker__triangle {
   position: absolute;
   left: 50px;
 }
 
-.datepicker__tether-element-attached-top .datepicker__triangle {
+.tether-element-attached-top .datepicker__triangle {
   @extend %triangle-arrow-up;
 }
 
-.datepicker__tether-element-attached-bottom .datepicker__triangle {
+.tether-element-attached-bottom .datepicker__triangle {
   @extend %triangle-arrow-down;
 }
 
-.datepicker__tether-element-attached-bottom.datepicker__tether-element {
+.tether-target-attached-top.datepicker__container {
   margin-top: -20px;
 }
+
 
 .datepicker__header {
   text-align: center;
