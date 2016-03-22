@@ -27,7 +27,6 @@ var Calendar = React.createClass({
   mixins: [require("react-onclickoutside")],
 
   propTypes: {
-    weekdays: React.PropTypes.array.isRequired,
     locale: React.PropTypes.string.isRequired,
     moment: React.PropTypes.func.isRequired,
     dateFormat: React.PropTypes.string.isRequired,
@@ -106,16 +105,17 @@ var Calendar = React.createClass({
   },
 
   header() {
-    //SMALL HACK, something is wrong with setting week properties in moment.locale
-    let orgWeekdays = this.props.moment.weekdaysMin();
-    let newWeekdays = orgWeekdays[0];
-    orgWeekdays.shift()
+    
+    const startOfWeek = this.props.moment().startOf('week')
+    return [0, 1, 2, 3, 4, 5, 6].map(offset => {
+      const day = startOfWeek.clone().add(offset, 'days')
+      return (
+        <div key={offset} className="datepicker__day">
+          {day.localeData().weekdaysMin(day)}
+        </div>
+      )
+    })
 
-    newWeekdays = orgWeekdays.concat(newWeekdays)
-
-    return newWeekdays.map(function(day, key) {
-      return <div className="datepicker__day" key={key}>{day}</div>;
-    });
   },
 
   renderCurrentMonth() {
@@ -142,7 +142,10 @@ var Calendar = React.createClass({
   },
 
   renderTodayButton() {
-    const {moment, onSelect, locale} = this.props
+    const {moment, onSelect, locale, todayButton} = this.props
+    if (!todayButton) {
+      return
+    }
 
     return (
       <div className="datepicker__today-button" onClick={() => onSelect(moment())}>

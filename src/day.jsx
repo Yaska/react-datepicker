@@ -1,7 +1,7 @@
 import moment from "moment";
 import React from "react";
 import classnames from "classnames";
-import some from "lodash/collection/some";
+import some from "lodash/some";
 
 var Day = React.createClass({
   displayName: "Day",

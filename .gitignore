@@ -1,7 +1,14 @@
-bower_components
 node_modules
 .sass-cache
 npm-debug.log
 .idea
 tmp
 coverage
+
+docs/calendar.md
+docs/date_input.md
+docs/day.md
+docs/month.md
+docs/week.md
+docs/year_dropdown_options.md
+docs/year_dropdown.md

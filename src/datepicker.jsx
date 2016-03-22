@@ -1,4 +1,4 @@
-import isEqual from "lodash/lang/isEqual";
+import isEqual from "lodash/isEqual";
 import moment from "moment";
 import DateInput from "./date_input";
 import Calendar from "./calendar";
@@ -65,7 +65,9 @@ var DatePicker = React.createClass({
   },
 
   handleFocus() {
-    if(this.state.focus) { return }
+    if(this.state.focus) { 
+      this.setState({ focus: true }) 
+    }
     this.props.onFocus();
     setTimeout(() => {
       this.setState({ focus: true });
@@ -174,7 +176,8 @@ var DatePicker = React.createClass({
             handleClick={this.onInputClick}
             includeDates={this.props.includeDates}
             weekStart={this.props.weekStart}
-            showYearDropdown={this.props.showYearDropdown} />
+            showYearDropdown={this.props.showYearDropdown}
+            todayButton={this.props.todayButton} />
         </Popover>
       );
     }

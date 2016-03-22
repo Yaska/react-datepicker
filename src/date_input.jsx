@@ -91,6 +91,7 @@ var DateInput = React.createClass({
   },
 
   render() {
+    
     return <input
         ref="input"
         type="text"
